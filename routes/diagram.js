@@ -15,7 +15,7 @@ const {
 } = require('../helper/directory');
 const { findSeries } = require('async');
 
-router.post('/',authorization,function(req,res){
+router.post('/',function(req,res){
     try
     {
             console.log("here")
@@ -63,7 +63,7 @@ router.post('/',authorization,function(req,res){
 });  
 
 
-router.get('/', authorization, async (req,res)=>{
+router.get('/',  async (req,res)=>{
     try{
         const result = await pool.query("SELECT a.*,b.* FROM diagram AS a INNER JOIN catalogue AS b ON a.catalogue_id=b.catalogue_id");
         res.send({
@@ -74,7 +74,25 @@ router.get('/', authorization, async (req,res)=>{
     }catch(err){
         res.send({code:0,msg:err});
     }
-})
+});
+
+
+router.delete('/',  async (req,res)=>{
+    try{
+        const {
+            diagram_id
+        } = req.body;
+
+        const result = await pool.query("DELETE FROM diagram WHERE diagram_id=?",[diagram_id]);
+        res.send({
+            code:1,
+            msg:"Deleted"
+        })
+
+    }catch(err){
+        res.send({code:0,msg:err});
+    }
+});
 
 
 module.exports = router;

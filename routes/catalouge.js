@@ -15,9 +15,8 @@ const {
 } = require('../helper/directory');
 const { findSeries } = require('async');
 
-router.post('/', authorization, async (req,res)=>{
+router.post('/', async (req,res)=>{
     try{
-        const user_id = res.decoded;
         const {
             name,
             year_of_publication,
@@ -35,7 +34,7 @@ router.post('/', authorization, async (req,res)=>{
     }
 });
 
-router.get('/', authorization, async (req,res)=>{
+router.get('/', async (req,res)=>{
     try{
         const result = await pool.query("SELECT * FROM catalogue");
         res.send({
@@ -48,5 +47,42 @@ router.get('/', authorization, async (req,res)=>{
     }
 })
 
+router.delete('/', async (req,res)=>{
+    try{
+        const {
+            catalogue_id
+        } = req.body;
+
+        const result = await pool.query("DELETE FROM catalogue WHERE catalogue_id = ?",[catalogue_id]);
+        
+        res.send({
+            code:1,
+            msg:"Deleted"
+        })
+
+    }catch(err){
+        res.send({code:0,msg:err});
+    }
+})
+
+router.post('/edit', async (req,res)=>{
+    try{
+        const {
+            name,
+            year_of_publication,
+            no_of_diagrams,
+            description,
+            catalogue_id
+        } = req.body;
+
+        const result = await pool.query("UPDATE catalogue SET `name`=?,`year_of_publication`=?,`no_of_diagrams`=?,`description`=? WHERE catalogue_id=?",
+        [name, year_of_publication, no_of_diagrams, description,catalogue_id]);
+
+        res.send({code:1,msg:"Updated"});
+
+    }catch(err){
+        return res.send({code:0,msg:err});
+    }
+});
 
 module.exports = router;

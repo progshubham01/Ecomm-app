@@ -11,10 +11,13 @@ const diagram = require('./routes/diagram');
 const brands = require('./routes/brands');
 const catalogue = require('./routes/catalouge');
 const modals = require('./routes/modals'); 
+const hsn = require('./routes/hsn');
+const product = require('./routes/products');
+const product_category = require('./routes/product_category');
 
 app.set('view engine', 'ejs');
 
-const PORT=process.env.PORT||9555;
+const PORT=process.env.PORT||9876;
 
 // app.use(express.json()).use(express.urlencoded())
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -34,6 +37,10 @@ app.use('/catalogue', catalogue);
 app.use('/brands', brands);
 app.use('/diagram', diagram);
 app.use('/parts', parts);
+app.use('/models', modals);
+app.use('/hsn', hsn);
+app.use('/product', product);
+app.use('/product_category', product_category);
 
 var server = app.listen(PORT,()=>{
   console.log(`Server started on port ${PORT}`);

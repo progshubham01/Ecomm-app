@@ -15,7 +15,7 @@ const {
 } = require('../helper/directory');
 const { findSeries } = require('async');
 
-router.post('/', authorization, async (req,res)=>{
+router.post('/', async (req,res)=>{
     try{
         const user_id = res.decoded;
         const {
@@ -33,12 +33,58 @@ router.post('/', authorization, async (req,res)=>{
     }
 });
 
-router.get('/', authorization, async (req,res)=>{
+router.get('/', async (req,res)=>{
     try{
         const result = await pool.query("SELECT * FROM brand");
         res.send({
             code:1,
             brand: result
+        })
+
+    }catch(err){
+        res.send({code:0,msg:err});
+    }
+})
+
+router.post('/edit', async (req,res)=>{
+    try{
+        const {
+            brand_name,
+            brand_desc,
+            brand_id
+        } = req.body;
+
+        const result = await pool.query("UPDATE brand SET `brand_name` =?, `brand_desc`=? WHERE `brand_id`=?",
+        [
+            brand_name,
+            brand_desc,
+            brand_id
+        ]);
+        
+        res.send({
+            code:1,
+            msg:"Updated"
+        })
+
+    }catch(err){
+        res.send({code:0,msg:err});
+    }
+})
+
+router.delete('/', async (req,res)=>{
+    try{
+        const {
+            brand_id
+        } = req.body;
+        
+        const result = await pool.query("DELETE FROM brand WHERE `brand_id`=?",
+        [
+            brand_id
+        ]);
+        
+        res.send({
+            code:1,
+            msg:"DELETED"
         })
 
     }catch(err){

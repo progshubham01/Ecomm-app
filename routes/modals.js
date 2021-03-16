@@ -15,9 +15,8 @@ const {
 } = require('../helper/directory');
 const { findSeries } = require('async');
 
-router.post('/', authorization, async (req,res)=>{
+router.post('/', async (req,res)=>{
     try{
-        const user_id = res.decoded;
         const {
             model_name,
             model_desc,
@@ -36,7 +35,7 @@ router.post('/', authorization, async (req,res)=>{
     }
 });
 
-router.get('/', authorization, async (req,res)=>{
+router.get('/', async (req,res)=>{
     try{
         const result = await pool.query("SELECT * FROM model");
         res.send({
@@ -46,6 +45,41 @@ router.get('/', authorization, async (req,res)=>{
 
     }catch(err){
         res.send({code:0,msg:err});
+    }
+})
+
+router.post('/edit', async (req,res)=>{
+    try{
+        const {
+            model_name,
+            model_desc,
+            vin_number,
+            model_year,
+            model_manufacturer,
+            model_id
+        } = req.body;
+
+        const result = await pool.query("UPDATE model SET `model_name`=?,`model_desc`=?,`vin_number`=?,`model_year`=?,`model_manufacturer`=? WHERE model_id=?",
+        [model_name,model_desc,vin_number,model_year,model_manufacturer,model_id]);
+
+        res.send({code:1,msg:"Updated"});
+
+    }catch(err){
+        return res.send({code:0,msg:err});
+    }
+});
+
+router.delete('/', async(req,res)=>{
+    try{
+        const {
+            model_id
+        } = req.body;
+
+        const result = await pool.query("DELETE FROM model WHERE model_id = ?", [model_id])
+
+        res.send({code:1, msg:"Deleted"})
+    }catch(err){
+        res.send({code:0,msg:err})
     }
 })
 
