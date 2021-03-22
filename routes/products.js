@@ -9,6 +9,7 @@ const authorization = require('../helper/jwt');
 let formidable = require('formidable');
 const fs = require("fs");
 var rimraf = require("rimraf");
+const { generateArray }  = require("../helper/commonFn")
 
 const {
     save_directory
@@ -16,61 +17,35 @@ const {
 const { findSeries } = require('async');
 const { runInNewContext } = require('vm');
 
-router.post('/',function(req,res){
+router.post('/fetch_fields', async function(req,res){
+    const {
+        primary,
+        secondary,
+        tertiary
+    } = req.body;
     try
     {
-            let name;
-            let form = new formidable.IncomingForm();
-            form.keepExtensions= true ;
-            form.maxFieldsSize=10*1024*1024;
-            form.multiples = true;
-            form.parse(req,async  (err, fields, files) => {
-            if (err)
-            {
-                console.error('Error', err)
-                return res.send({code:32,msg:err})
-            }
-            var CurrentDate = moment().format("YYYY-MM-DD");
-            console.log(CurrentDate);
-
-            const result3 = await pool.query('INSERT INTO `products`(`pc_id`, `diagram_id`,`ref_id`,`part_name_id`,`part_number_id`,`brand_id`,`rate`,`description`) VALUES (?,?,?,?,?,?,?,?)',
-                [
-                    fields.pc_id, 
-                    fields.diagram_id, 
-                    fields.ref_id,
-                    fields.part_name_id,
-                    fields.part_number_id,
-                    fields.brand_id,
-                    fields.rate,
-                    fields.description
-                ]);
-
-            const pid = result3.insertId;
-
-            var uploadDir = './public/product/product_'+pid+'/';
-            const done = await save_directory(uploadDir)
-
-            for(let i=0; i< files.file.length; i++)
-            {
-                if(files.file[i].size)
-                {    
-                    var oldpath = files.file[i].path;
-                    fileExt = files.file[i].name.split('.').pop();
-                    var newpath='./public/product/product_'+pid+'/'+ 'product_'+pid+'_'+i+'.'+fileExt+'';
-                    mv(oldpath, newpath, (err) => {
-                        if (err){
-                            res.send({code:33,msg:err});
-                        }
-                    });
-                    name='./product/product_'+pid+'/product_'+pid+'_'+i+'.'+fileExt+'';
-                }
-
-                const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, name]);
-
-            }
-
-            res.send({code:1, msg: "Product Inserted"})
-        });
+        let fields, pc_id, result;
+        if(primary && secondary && tertiary){
+            result = await pool.query("SELECT fields, pc_id FROM product_category WHERE `primary` = ? and secondary = ? and tertiary = ?",[primary, secondary, tertiary]); 
+        }
+        else if(primary && secondary){
+            result = await pool.query("SELECT fields, pc_id FROM product_category WHERE `primary` = ? and secondary = ?",[primary, secondary]); 
+        }
+        else if(primary){
+            console.log(primary)
+            result = await pool.query("SELECT fields, pc_id FROM product_category WHERE `primary` = ?",[primary]); 
+            
+            // console.log(fields, pc_id, "dz")
+        }
+        else{
+            res.send({code:0, msg: "Invalid Input"})
+        }
+        // console.log(result)
+        fields = result[0].fields;
+        pc_id = result[0].pc_id;
+        // console.log(fields, pc_id, "dz")
+        res.send({code:1, msg: "Success", fields:fields.split(','), pc_id : pc_id})
     }
     catch(err){
         return res.send({code:0,msg:err})
@@ -79,39 +54,17 @@ router.post('/',function(req,res){
 
 router.get('/details', async (req,res)=>{
     try{
-        const {
-            primary,
-            secondary,
-            tertiary
-        } = req.body;
-
-        let category ; 
-
-        if(primary){
-            category = await pool.query("SELECT * FROM product_category WHERE primary = ?",[primary]); 
-        }else if (secondary){
-            category = await pool.query("SELECT * FROM product_category WHERE secondary=?",[secondary]);
-        }else{
-            category = await pool.query("SELECT * FROM product_category WHERE tertiary=?",[tertiary]);
-        }
-
+        
         const model = await pool.query("SELECT * FROM model");
-
         const product  = await pool.query("SELECT * FROM products");
-
         const part_name = await pool.query("SELECT * FROM part_name");
-
         const part_number = await pool.query("SELECT * FROM part_number");
-
         const brand = await pool.query("SELECT * FROM brand");
-
         const hsn = await pool.query("SELECT * FROM hsn_code");
-
         const gst = await pool.query("SELECT * FROM gst");
         
         res.send({
             code:1, 
-            category: result, 
             model:model, 
             product: product, 
             part_name: part_name, 
@@ -127,12 +80,105 @@ router.get('/details', async (req,res)=>{
     }
 });
 
+router.post('/',function(req,res){
+    try
+    {
+            let name;
+            let form = new formidable.IncomingForm();
+            form.keepExtensiofilens= true ;
+            form.maxFieldsSize=10*1024*1024;
+            form.multiples = true;
+            form.parse(req,async  (err, fields, files) => {
+            if (err)
+            {
+                console.error('Error', err)
+                return res.send({code:32,msg:err})
+            }
+            var CurrentDate = moment().format("YYYY-MM-DD");
+            console.log(CurrentDate);
+            console.log(fields.gst_ids, "sadsa");
+            const result3 = await pool.query('INSERT INTO `products`( `pc_id`, `diagram_id`, `ref_id`, `model_id`, `part_name_id`, `part_number_id`, `brand_id`, `rate`, `barcode`, `hsn_id`, `gst_id`, `description`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+                [
+                    fields.pc_id, 
+                    fields.diagram_id, 
+                    fields.ref_id,
+                    fields.model_id,
+                    fields.part_name_id,
+                    fields.part_number_id,
+                    fields.brand_id,
+                    fields.rate,
+                    fields.barcode,
+                    fields.hsn_id,
+                    fields.gst_ids,
+                    fields.description
+                ]);
+
+            const pid = result3.insertId;
+
+            var uploadDir = './public/product/product_'+pid+'/';
+            const done = await save_directory(uploadDir)
+
+            // console.log(files.file.length);
+            if(files.file.length){
+                for(let i=0; i< files.file.length; i++)
+                {
+                    if(files.file[i].size)
+                    {    
+                        var oldpath = files.file[i].path;
+                        fileExt = files.file[i].name.split('.').pop();
+                        var newpath='./public/product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                        mv(oldpath, newpath, (err) => {
+                            if (err){
+                                res.send({code:33,msg:err});
+                            }
+                        });
+                        name='product/product_'+pid+'/product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                    }
+                    const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, name]);
+                }
+            }
+            else{
+                if(files.file.size)
+                {    
+                    var oldpath = files.file.path;
+                    fileExt = files.file.name.split('.').pop();
+                    var newpath='./public/product/product_'+pid+'/'+ 'product_'+pid+'_'+0+Date.now()+'.'+fileExt+'';
+                    mv(oldpath, newpath, (err) => {
+                        if (err){
+                            res.send({code:33,msg:err});
+                        }
+                    });
+                    name='product/product_'+pid+'/product_'+pid+'_'+0+Date.now()+'.'+fileExt+'';
+                    const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, name]);
+                }
+            }
+
+            res.send({code:1, msg: "Product Inserted"})
+        });
+    }
+    catch(err){
+        return res.send({code:0,msg:err})
+    }
+});  
+
+
+
 router.get('/', async (req,res)=>{
     try{
-        const result = await pool.query("SELECT a.part_name,b.part_number,c.brand_name,d.rate,d.description FROM products AS d INNER JOIN part_name AS a ON a.part_name_id = d.part_name_id INNER JOIN part_number AS b ON d.part_number_id = b.part_number_id INNER JOIN brand AS c ON d.brand_id = c.brand_id");
+        const result = await pool.query("SELECT d.p_id, a.part_name,b.part_number,c.brand_name,d.rate,d.description, p.image FROM products AS d LEFT JOIN part_name AS a ON a.part_name_id = d.part_name_id LEFT JOIN part_number AS b ON d.part_number_id = b.part_number_id LEFT JOIN brand AS c ON d.brand_id = c.brand_id left join  product_image p on d.p_id = p.p_id");
+
+        let _result = [];
+        let last_id = 0;
+        result.forEach((r) =>{
+            if(last_id != r.p_id){
+                last_id = r.p_id;
+                _result.push(r);
+            }
+        })
+
         res.send({
             code:1,
-            product: result
+            product: _result
         })
 
     }catch(err){
@@ -140,23 +186,104 @@ router.get('/', async (req,res)=>{
     }
 })
 
-router.get('/edit', async(req,res)=>{
+router.delete('/', async (req,res) =>{
     try{
         const {
             p_id
         } = req.body;
 
-        const result = await pool.query("SELECT a.part_name,b.part_number,c.brand_name,d.rate FROM products AS d INNER JOIN part_name AS a ON a.part_name_id = d.part_name_id INNER JOIN part_number AS b ON d.part_number_id = b.part_number_id INNER JOIN brand AS c ON d.brand_id = c.brand_id WHERE d.p_id = ?",[p_id]);
-        res.send({
-            code:1,
-            product: result
-        })
+        const result = await pool.query("DELETE FROM products WHERE p_id= ?",[p_id]);
+        const result1 = await pool.query("DELETE FROM product_image WHERE p_id= ?",[p_id]);
 
+        res.send({code:1, msg: "Deleted product"});
 
     }catch(err){
         res.send({code:0, msg:err});
     }
-})
+});
+
+router.post('/edit',function(req,res){
+    try
+    {
+            let name;
+            let form = new formidable.IncomingForm();
+            form.keepExtensiofilens= true ;
+            form.maxFieldsSize=10*1024*1024;
+            form.multiples = true;
+            form.parse(req,async  (err, fields, files) => {
+            if (err)
+            {
+                console.error('Error', err)
+                return res.send({code:32,msg:err})
+            }
+            
+            console.log(fields);
+            const result3 = await pool.query('UPDATE `products` SET `pc_id`=?,`diagram_id`=?,`ref_id`=?,`model_id`=?,`part_name_id`=?,`part_number_id`=?,`brand_id`=?,`rate`=?,`barcode`=?,`hsn_id`=?,`gst_id`=?,`description`=? WHERE `p_id`= ? ',
+                [
+                    fields.pc_id, 
+                    fields.diagram_id, 
+                    fields.ref_id,
+                    fields.model_id,
+                    fields.part_name_id,
+                    fields.part_number_id,
+                    fields.brand_id,
+                    fields.rate,
+                    fields.barcode,
+                    fields.hsn_id,
+                    fields.gst_ids,
+                    fields.description,
+                    fields.p_id
+                ]);
+
+            const pid = fields.p_id;
+            console.log(files);
+            var uploadDir = './public/product/product_'+pid+'/';
+            const done = await save_directory(uploadDir)
+
+            console.log(files.file.length);
+            if(files.file.length){
+                for(let i=0; i< files.file.length; i++)
+                {
+                    if(files.file[i].size)
+                    {    
+                        var oldpath = files.file[i].path;
+                        fileExt = files.file[i].name.split('.').pop();
+                        var newpath='./public/product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                        mv(oldpath, newpath, (err) => {
+                            if (err){
+                                res.send({code:33,msg:err});
+                            }
+                        });
+                        name='product/product_'+pid+'/product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                    }
+                    const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, name]);
+                }
+            }
+            else{
+                if(files.file.size)
+                {    
+                    var oldpath = files.file.path;
+                    fileExt = files.file.name.split('.').pop();
+                    var newpath='./public/product/product_'+pid+'/'+ 'product_'+pid+'_'+0+Date.now()+'.'+fileExt+'';
+                    mv(oldpath, newpath, (err) => {
+                        if (err){
+                            res.send({code:33,msg:err});
+                        }
+                    });
+                    name='product/product_'+pid+'/product_'+pid+'_'+0+Date.now()+'.'+fileExt+'';
+                    const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, name]);
+                }
+            }
+            
+
+            res.send({code:1, msg: "Product Inserted"})
+        });
+    }
+    catch(err){
+        return res.send({code:0,msg:err})
+    }
+});  
+
 
 
 module.exports = router;

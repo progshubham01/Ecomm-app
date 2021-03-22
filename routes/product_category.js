@@ -9,19 +9,13 @@ const authorization = require('../helper/jwt');
 let formidable = require('formidable');
 const fs = require("fs");
 var rimraf = require("rimraf");
+const { generateArray }  = require("../helper/commonFn")
 
 const {
     save_directory
 } = require('../helper/directory');
 const { findSeries } = require('async');
 
-const generateArray = (json, label) =>{
-    let _arr= [];
-    json.map(p =>{
-        _arr.push(p[label])
-    })
-    return _arr;
-}
 
 router.post('/', async (req,res)=>{
     try{
