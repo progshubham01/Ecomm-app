@@ -5,7 +5,7 @@ var pool = mysql.createConnection({multipleStatements: true,
   connectionLimit : 100,
   host: 'localhost',
   user: 'root',
-  password: '',
+  password: 'amrit981',
   database: 'ecomm',
   charset: 'UTF8MB4_GENERAL_CI'
 });
