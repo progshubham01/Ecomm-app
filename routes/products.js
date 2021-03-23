@@ -165,20 +165,18 @@ router.post('/',function(req,res){
 
 router.get('/', async (req,res)=>{
     try{
-        const result = await pool.query("SELECT d.p_id, a.part_name,b.part_number,c.brand_name,d.rate,d.description, p.image FROM products AS d LEFT JOIN part_name AS a ON a.part_name_id = d.part_name_id LEFT JOIN part_number AS b ON d.part_number_id = b.part_number_id LEFT JOIN brand AS c ON d.brand_id = c.brand_id left join  product_image p on d.p_id = p.p_id");
+        const result = await pool.query("SELECT d.*, a.part_name,b.part_number,c.brand_name FROM products AS d LEFT JOIN part_name AS a ON a.part_name_id = d.part_name_id LEFT JOIN part_number AS b ON d.part_number_id = b.part_number_id LEFT JOIN brand AS c ON d.brand_id = c.brand_id order by d.p_id desc");
 
         let _result = [];
         let last_id = 0;
-        result.forEach((r) =>{
-            if(last_id != r.p_id){
-                last_id = r.p_id;
-                _result.push(r);
-            }
-        })
+        for(let i = 0; i<result.length; i++) {
+            const images = await pool.query("select * from product_image where p_id = ?", result[i].p_id);
+            result[i].image = images;
+        }
 
         res.send({
             code:1,
-            product: _result
+            product:result
         })
 
     }catch(err){
@@ -186,7 +184,7 @@ router.get('/', async (req,res)=>{
     }
 })
 
-router.delete('/', async (req,res) =>{
+router.post('/delete', async (req,res) =>{
     try{
         const {
             p_id

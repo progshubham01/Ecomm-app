@@ -79,7 +79,7 @@ router.get('/category_type', async (req,res)=>{
     }
 })
 
-router.delete('/', async (req,res) =>{
+router.post('/delete', async (req,res) =>{
     try{
         const {
             pc_id
