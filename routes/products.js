@@ -173,8 +173,10 @@ router.get('/', async (req,res)=>{
         let _result = [];
         let last_id = 0;
         for(let i = 0; i<result.length; i++) {
+            let fields = await pool.query("SELECT fields FROM product_category WHERE `pc_id` = ?",[result[i].pc_id]); 
             const images = await pool.query("select * from product_image where p_id = ?", result[i].p_id);
             result[i].image = images;
+            result[i].fields = JSON.parse(fields[0].fields);
         }
 
         res.send({
