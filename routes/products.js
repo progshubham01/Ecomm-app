@@ -44,10 +44,13 @@ router.post('/fetch_fields', async function(req,res){
             res.send({code:0, msg: "Invalid Input"})
         }
         // console.log(result)
-        fields = result[0].fields;
-        pc_id = result[0].pc_id;
+        if(result && result.length > 0){
+            fields = result[0].fields;
+            pc_id = result[0].pc_id;
+        }
+        
         // console.log(fields, pc_id, "dz")
-        res.send({code:1, msg: "Success", fields:JSON.parse(fields), pc_id : pc_id})
+        res.send({code:1, msg: "Success", fields:fields ? JSON.parse(fields) : [], pc_id : pc_id})
     }
     catch(err){
         console.log(err)
