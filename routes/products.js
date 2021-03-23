@@ -26,14 +26,16 @@ router.post('/fetch_fields', async function(req,res){
     try
     {
         let fields, pc_id, result;
+        
         if(primary && secondary && tertiary){
+            console.log(primary,secondary, tertiary);
             result = await pool.query("SELECT fields, pc_id FROM product_category WHERE `primary` = ? and secondary = ? and tertiary = ?",[primary, secondary, tertiary]); 
         }
         else if(primary && secondary){
             result = await pool.query("SELECT fields, pc_id FROM product_category WHERE `primary` = ? and secondary = ?",[primary, secondary]); 
         }
         else if(primary){
-            console.log(primary)
+            console.log(primary,secondary, tertiary, "sda");
             result = await pool.query("SELECT fields, pc_id FROM product_category WHERE `primary` = ?",[primary]); 
             
             // console.log(fields, pc_id, "dz")
@@ -45,9 +47,10 @@ router.post('/fetch_fields', async function(req,res){
         fields = result[0].fields;
         pc_id = result[0].pc_id;
         // console.log(fields, pc_id, "dz")
-        res.send({code:1, msg: "Success", fields:fields.split(','), pc_id : pc_id})
+        res.send({code:1, msg: "Success", fields:JSON.parse(fields), pc_id : pc_id})
     }
     catch(err){
+        console.log(err)
         return res.send({code:0,msg:err})
     }
 });  

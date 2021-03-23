@@ -28,7 +28,7 @@ router.post('/', async (req,res)=>{
         } = req.body;
 
         _product_type = product_type.toString();
-        _fields = fields.toString();
+        _fields = JSON.stringify(fields);
 
         const result = await pool.query("INSERT INTO product_category(`primary`,`secondary`,`tertiary`,`product_type`,`fields`) VALUES(?,?,?,?,?)",
         [primary_category_name,secondary_category_name,tertiary_category_name, _product_type, _fields]);
@@ -44,12 +44,15 @@ router.get('/', async (req,res)=>{
     try{
         const result = await pool.query("SELECT * FROM product_category");
         let _result = [];
+        console.log(result);
         result.map((r) =>{
             _result.push({
                 ...r,
                 product_type:r.product_type.split(','),
-                fields:r.fields.split(',')
+                fields:JSON.parse(r.fields)
             })
+            // console.log(JSON.parse(r.fields))
+            // console.log(JSON.parse(r.fields));
         })
         res.send({
             code:1,
@@ -57,6 +60,7 @@ router.get('/', async (req,res)=>{
         })
 
     }catch(err){
+        console.log(err);
         res.send({code:0,msg:err});
     }
 })
