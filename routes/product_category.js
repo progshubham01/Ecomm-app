@@ -110,7 +110,7 @@ router.post('/edit', async (req,res)=>{
         } = req.body;
 
         _product_type = product_type.toString();
-        _fields = fields.toString();
+        _fields = JSON.stringify(fields);
         
         const result = await pool.query("UPDATE `product_category` SET `primary` = ?, `secondary` = ?, `tertiary` = ?,`product_type` =?, `fields` = ?  WHERE `pc_id` = ?",
         [primary_category_name, secondary_category_name, tertiary_category_name, _product_type, _fields, pc_id])
