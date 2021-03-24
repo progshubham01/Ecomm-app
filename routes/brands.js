@@ -35,7 +35,7 @@ router.post('/', async (req,res)=>{
 
 router.get('/', async (req,res)=>{
     try{
-        const result = await pool.query("SELECT * FROM brand");
+        const result = await pool.query("SELECT * FROM brand order by brand_id desc");
         res.send({
             code:1,
             brand: result
@@ -71,7 +71,7 @@ router.post('/edit', async (req,res)=>{
     }
 })
 
-router.delete('/', async (req,res)=>{
+router.post('/delete', async (req,res)=>{
     try{
         const {
             brand_id

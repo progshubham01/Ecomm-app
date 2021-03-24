@@ -48,7 +48,7 @@ router.get('/', async (req,res)=>{
     }
 })
 
-router.delete('/', async (req,res)=>{
+router.post('/delete', async (req,res)=>{
     try{
         const {
             catalogue_id

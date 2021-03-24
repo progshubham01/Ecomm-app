@@ -99,8 +99,8 @@ router.post('/edit',function(req,res){
                 [fileName, fields.page_number, fields.description, fields.catalogue_id, fields.diagram_id]);
             }
             else{
-                const result3 = await pool.query('UPDATE diagram SET diagram_img=?,page_number=?,diagram_desc=?,catalogue_id=? WHERE diagram_id= ?',
-                ['', fields.page_number, fields.description, fields.catalogue_id, fields.diagram_id]);
+                const result3 = await pool.query('UPDATE diagram SET page_number=?,diagram_desc=?,catalogue_id=? WHERE diagram_id= ?',
+                [fields.page_number, fields.description, fields.catalogue_id, fields.diagram_id]);
             }
             res.send({code:1,msg:"success"})
             

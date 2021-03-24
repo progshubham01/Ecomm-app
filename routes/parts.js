@@ -55,7 +55,7 @@ router.post('/edit', async (req,res)=>{
     }
 });
 
-router.delete('/', async (req,res)=>{
+router.post('/delete', async (req,res)=>{
     try{
         const {
             part_name_id 
@@ -76,13 +76,14 @@ router.delete('/', async (req,res)=>{
 
 router.get('/', async (req,res)=>{
     try{
-        const result = await pool.query("SELECT a.*,b.* FROM part_name AS a INNER JOIN a_part_name AS b ON a.part_name_id = b.part_name_id ");
+        const result = await pool.query("SELECT a.*,b.* FROM part_name AS a INNER JOIN a_part_name AS b ON a.part_name_id = b.part_name_id order by a.part_name_id desc ");
         res.send({
             code:1,
             part: result
         })
 
     }catch(err){
+        console.log(err);
         res.send({code:0,msg:err});
     }
 })
@@ -128,7 +129,7 @@ router.post('/part_no', async (req,res)=>{
     }
 });
 
-router.delete('/part_no', async (req,res)=>{
+router.post('/part_no/delete', async (req,res)=>{
     try{
         const {
             part_number_id 
@@ -149,7 +150,7 @@ router.delete('/part_no', async (req,res)=>{
 
 router.get('/part_no', async (req,res)=>{
     try{
-        const result = await pool.query("SELECT a.*,b.* FROM part_number AS a INNER JOIN a_part_number AS b ON a.part_number_id = b.part_number_id ");
+        const result = await pool.query("SELECT a.*,b.* FROM part_number AS a INNER JOIN a_part_number AS b ON a.part_number_id = b.part_number_id order by a.part_number_id desc ");
         res.send({
             code:1,
             part: result

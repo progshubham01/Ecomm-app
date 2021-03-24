@@ -149,8 +149,8 @@ router.post('/',function(req,res){
                     if(files.file.size)
                     {    
                         var oldpath = files.file.path;
-                        fileExt = files.file[i].name.split('.').pop();
-                        fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                        fileExt = files.file.name.split('.').pop();
+                        fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+Date.now()+'.'+fileExt+'';
                         var newpath='./public/'+fileName;
                         mv(oldpath, newpath, (err) => {
                             if (err){
@@ -183,7 +183,7 @@ router.get('/', async (req,res)=>{
             let fields = await pool.query("SELECT fields FROM product_category WHERE `pc_id` = ?",[result[i].pc_id]); 
             const images = await pool.query("select * from product_image where p_id = ?", result[i].p_id);
             result[i].image = images;
-            result[i].fields = JSON.parse(fields[0].fields);
+            result[i].fields = fields && fields.length > 0 ? JSON.parse(fields[0].fields) :  null;
         }
 
         res.send({
@@ -192,6 +192,7 @@ router.get('/', async (req,res)=>{
         })
 
     }catch(err){
+        console.log(err);
         res.send({code:0,msg:err});
     }
 })
