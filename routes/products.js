@@ -101,64 +101,75 @@ router.post('/',function(req,res){
                 console.error('Error', err)
                 return res.send({code:32,msg:err})
             }
+            console.log(fields)
+            console.log(files)
             var CurrentDate = moment().format("YYYY-MM-DD");
             console.log(CurrentDate);
             console.log(fields.gst_ids, "sadsa");
-            const result3 = await pool.query('INSERT INTO `products`( `pc_id`, `diagram_id`, `ref_id`, `model_id`, `part_name_id`, `part_number_id`, `brand_id`, `rate`, `barcode`, `hsn_id`, `gst_id`, `description`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+            const result3 = await pool.query('INSERT INTO `products`( `pc_id`, `diagram_id`, `ref_id`, `model_id`) VALUES (?,?,?,?)',
                 [
                     fields.pc_id, 
                     fields.diagram_id, 
                     fields.ref_id,
                     fields.model_id,
-                    fields.part_name_id,
-                    fields.part_number_id,
-                    fields.brand_id,
-                    fields.rate,
-                    fields.barcode,
-                    fields.hsn_id,
-                    fields.gst_ids,
-                    fields.description
+                ]);
+            const pid = result3.insertId;
+            for(let i = 0; i<fields.totalPart; i++){
+                const result_det = await pool.query('INSERT INTO product_details(product_id, part_name_id, part_number_id, brand_id, rate, barcode, hsn_id, gst_id, description, alternate_product_id) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                [
+                    pid,
+                    fields[`part_name_id${i}`],
+                    fields[`part_number_id${i}`],
+                    fields[`brand_id${i}`],
+                    fields[`rate${i}`],
+                    fields[`barcode${i}`],
+                    fields[`hsn_id${i}`],
+                    fields[`gst_ids${i}`],
+                    fields[`description${i}`],
+                    fields[`alternateProduct${i}`],
+                    
                 ]);
 
-            const pid = result3.insertId;
+                const pd_id = result_det.insertId;
 
-            var uploadDir = './public/product/product_'+pid+'/';
-            const done = await save_directory(uploadDir)
+                var uploadDir = './public/product/product_'+pid+'/';
+                const done = await save_directory(uploadDir)
 
-            console.log(files.file);
-            if(files.file){
-                if(files.file.length){
-                    for(let i=0; i< files.file.length; i++)
-                    {
-                        if(files.file[i].size)
+                console.log(files[`file${i}`]);
+                if(files[`file${i}`]){
+                    if(files[`file${i}`].length){
+                        for(let j=0; j< files[`file${i}`].length; j++)
+                        {
+                            if(files[`file${i}`][j].size)
+                            {    
+                                var oldpath = files[`file${i}`][j].path;
+                                fileExt = files[`file${i}`][j].name.split('.').pop();
+                                fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                                var newpath='./public/'+fileName;
+                                mv(oldpath, newpath, (err) => {
+                                    if (err){
+                                        res.send({code:33,msg:err});
+                                    }
+                                });
+                            }
+                            const image = await pool.query("INSERT INTO product_image(`pd_id`,`image`) VALUES(?,?)",[pd_id, fileName]);
+                        }
+                    }
+                    else{
+                        if(files[`file${i}`].size)
                         {    
-                            var oldpath = files.file[i].path;
-                            fileExt = files.file[i].name.split('.').pop();
-                            fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                            var oldpath = files[`file${i}`].path;
+                            fileExt = files[`file${i}`].name.split('.').pop();
+                            fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+Date.now()+'.'+fileExt+'';
                             var newpath='./public/'+fileName;
                             mv(oldpath, newpath, (err) => {
                                 if (err){
                                     res.send({code:33,msg:err});
                                 }
                             });
+                        
+                            const image = await pool.query("INSERT INTO product_image(`pd_id`,`image`) VALUES(?,?)",[pd_id, fileName]);
                         }
-                        const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, fileName]);
-                    }
-                }
-                else{
-                    if(files.file.size)
-                    {    
-                        var oldpath = files.file.path;
-                        fileExt = files.file.name.split('.').pop();
-                        fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+Date.now()+'.'+fileExt+'';
-                        var newpath='./public/'+fileName;
-                        mv(oldpath, newpath, (err) => {
-                            if (err){
-                                res.send({code:33,msg:err});
-                            }
-                        });
-                       
-                        const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, fileName]);
                     }
                 }
             }
@@ -175,15 +186,28 @@ router.post('/',function(req,res){
 
 router.get('/', async (req,res)=>{
     try{
-        const result = await pool.query("SELECT d.*, a.part_name,b.part_number,c.brand_name FROM products AS d LEFT JOIN part_name AS a ON a.part_name_id = d.part_name_id LEFT JOIN part_number AS b ON d.part_number_id = b.part_number_id LEFT JOIN brand AS c ON d.brand_id = c.brand_id order by d.p_id desc");
-
+        const result = await pool.query("SELECT p.*, d.diagram_desc, m.model_name FROM products AS p LEFT JOIN diagram d on d.diagram_id = p.diagram_id left join model m on m.model_id = p.model_id  order by p.p_id desc");
         let _result = [];
         let last_id = 0;
+        let img = '';
         for(let i = 0; i<result.length; i++) {
             let fields = await pool.query("SELECT fields FROM product_category WHERE `pc_id` = ?",[result[i].pc_id]); 
-            const images = await pool.query("select * from product_image where p_id = ?", result[i].p_id);
-            result[i].image = images;
-            result[i].fields = fields && fields.length > 0 ? JSON.parse(fields[0].fields) :  null;
+            let product_details = await pool.query("SELECT * FROM product_details WHERE product_id = ?",[result[i].p_id]);
+            let imageCount = 0;
+            for(let j = 0; j < product_details.length; j++) {
+                const images = await pool.query("select * from product_image where pd_id = ?", product_details[j].product_id);
+                product_details[j].images = images;
+                if(images.length > 0){
+                    img = images[0].image;
+                    imageCount = imageCount + images.length;
+                }
+
+            }
+            
+            result[i].product_details = product_details;
+            result[i].fields = fields && fields.length > 0 ? JSON.parse(fields[0].fields) :  [];
+            result[i].sampleImage = img;
+            result[i].imageCount = imageCount-1;
         }
 
         res.send({
@@ -204,12 +228,29 @@ router.post('/delete', async (req,res) =>{
         } = req.body;
 
         const result = await pool.query("DELETE FROM products WHERE p_id= ?",[p_id]);
-        const result1 = await pool.query("DELETE FROM product_image WHERE p_id= ?",[p_id]);
+        const result1 = await pool.query("DELETE FROM product_details WHERE product_id= ?",[p_id]);
+
+        res.send({code:1, msg: "Deleted product"});
+
+    }catch(err){
+        console.log(err);
+        res.send({code:0, msg:err});
+    }
+});
+
+router.post('/delete/part_number', async (req,res) =>{
+    try{
+        const {
+            pd_id
+        } = req.body;
+
+        const result1 = await pool.query("DELETE FROM product_details WHERE id= ?",[pd_id]);
 
         res.send({code:1, msg: "Deleted product"});
 
     }catch(err){
         res.send({code:0, msg:err});
+        console.log(err);
     }
 });
 
@@ -227,66 +268,80 @@ router.post('/edit',function(req,res){
                 console.error('Error', err)
                 return res.send({code:32,msg:err})
             }
-            
-            console.log(fields);
-            const result3 = await pool.query('UPDATE `products` SET `pc_id`=?,`diagram_id`=?,`ref_id`=?,`model_id`=?,`part_name_id`=?,`part_number_id`=?,`brand_id`=?,`rate`=?,`barcode`=?,`hsn_id`=?,`gst_id`=?,`description`=? WHERE `p_id`= ? ',
+            console.log(fields)
+            console.log(files)
+            var CurrentDate = moment().format("YYYY-MM-DD");
+            console.log(CurrentDate);
+            console.log(fields.gst_ids, "sadsa");
+            const result3 = await pool.query('UPDATE products SET pc_id=?,diagram_id=?,ref_id=?,model_id=? WHERE p_id= ?',
                 [
                     fields.pc_id, 
                     fields.diagram_id, 
                     fields.ref_id,
                     fields.model_id,
-                    fields.part_name_id,
-                    fields.part_number_id,
-                    fields.brand_id,
-                    fields.rate,
-                    fields.barcode,
-                    fields.hsn_id,
-                    fields.gst_ids,
-                    fields.description,
                     fields.p_id
                 ]);
-
             const pid = fields.p_id;
-            console.log(files);
-            var uploadDir = './public/product/product_'+pid+'/';
-            const done = await save_directory(uploadDir)
+            const result_del = await pool.query('DELETE FROM product_details WHERE product_id = ?',[fields.p_id]);
+            for(let i = 0; i<fields.totalPart; i++){
+                const result_det = await pool.query('INSERT INTO product_details(product_id, part_name_id, part_number_id, brand_id, rate, barcode, hsn_id, gst_id, description, alternate_product_id) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                [
+                    pid,
+                    fields[`part_name_id${i}`],
+                    fields[`part_number_id${i}`],
+                    fields[`brand_id${i}`],
+                    fields[`rate${i}`],
+                    fields[`barcode${i}`],
+                    fields[`hsn_id${i}`],
+                    fields[`gst_ids${i}`],
+                    fields[`description${i}`],
+                    fields[`alternateProduct${i}`],
+                    
+                ]);
 
-            console.log(files.file.length);
-            if(files.file.length){
-                for(let i=0; i< files.file.length; i++)
-                {
-                    if(files.file[i].size)
-                    {    
-                        var oldpath = files.file[i].path;
-                        fileExt = files.file[i].name.split('.').pop();
-                        fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
-                        var newpath='./public/'+fileName;
-                        mv(oldpath, newpath, (err) => {
-                            if (err){
-                                res.send({code:33,msg:err});
+                const pd_id = result_det.insertId;
+
+                var uploadDir = './public/product/product_'+pid+'/';
+                const done = await save_directory(uploadDir)
+
+                console.log(files[`file${i}`]);
+                if(files[`file${i}`]){
+                    if(files[`file${i}`].length){
+                        for(let j=0; j< files[`file${i}`].length; j++)
+                        {
+                            if(files[`file${i}`][j].size)
+                            {    
+                                var oldpath = files[`file${i}`][j].path;
+                                fileExt = files[`file${i}`][j].name.split('.').pop();
+                                fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                                var newpath='./public/'+fileName;
+                                mv(oldpath, newpath, (err) => {
+                                    if (err){
+                                        res.send({code:33,msg:err});
+                                    }
+                                });
                             }
-                        });
-                    }
-                    const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, fileName]);
-                }
-            }
-            else{
-                if(files.file.size)
-                {    
-                    var oldpath = files.file.path;
-                    fileExt = files.file[i].name.split('.').pop();
-                    fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
-                    var newpath='./public/'+fileName;
-                    mv(oldpath, newpath, (err) => {
-                        if (err){
-                            res.send({code:33,msg:err});
+                            const image = await pool.query("INSERT INTO product_image(`pd_id`,`image`) VALUES(?,?)",[pd_id, fileName]);
                         }
-                    });
-                   
-                    const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, filename]);
+                    }
+                    else{
+                        if(files[`file${i}`].size)
+                        {    
+                            var oldpath = files[`file${i}`].path;
+                            fileExt = files[`file${i}`].name.split('.').pop();
+                            fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+Date.now()+'.'+fileExt+'';
+                            var newpath='./public/'+fileName;
+                            mv(oldpath, newpath, (err) => {
+                                if (err){
+                                    res.send({code:33,msg:err});
+                                }
+                            });
+                        
+                            const image = await pool.query("INSERT INTO product_image(`pd_id`,`image`) VALUES(?,?)",[pd_id, fileName]);
+                        }
+                    }
                 }
             }
-            
 
             res.send({code:1, msg: "Product Inserted"})
         });

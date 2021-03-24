@@ -38,11 +38,11 @@ app.use((req,res,next)=>{
 app.use('/', login);
 app.use('/catalogue', catalogue);
 app.use('/brands', brands);
-app.use('/diagram', diagram);
+app.use('/diagrams', diagram);
 app.use('/parts', parts);
 app.use('/models', modals);
 app.use('/hsn', hsn);
-app.use('/product', product);
+app.use('/products', product);
 app.use('/product_category', product_category);
 app.use('/group', group);
 
