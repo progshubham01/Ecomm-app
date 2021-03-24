@@ -24,6 +24,7 @@ router.post('/', async (req,res)=>{
             gst,
             description
         } = req.body;
+        console.log(req.body)
 
         const result = await pool.query("INSERT INTO hsn_code(`hsn_code`,`country_of_origin`,`import_duty`,`gst_id`,`description`) VALUES(?,?,?,?,?)",
         [hsn_code, country_of_origin,import_duty, gst,description]);
@@ -122,7 +123,7 @@ router.post('/gst/edit', async(req,res)=>{
     }
 })
 
-router.delete('/', async(req,res)=>{
+router.post('/delete', async(req,res)=>{
     try{
         const {
             hsn_id
@@ -140,7 +141,7 @@ router.delete('/', async(req,res)=>{
     }
 })
 
-router.delete('/gst', async(req,res)=>{
+router.post('/gst/delete', async(req,res)=>{
     try{
         const {
             gst_id

@@ -30,38 +30,86 @@ router.post('/',function(req,res){
                 console.error('Error', err)
                 return res.send({code:32,msg:err})
             }
-            var CurrentDate = moment().format("YYYY-MM-DD");
-            console.log(CurrentDate)
+            // var CurrentDate = moment().format("YYYY-MM-DD");
+            // console.log(CurrentDate)
             
-            const result = await pool.query('SELECT MAX(`diagram_id`) AS count FROM `diagram`');
-            console.log(result);
-            let x;
-            if(result[0].count)
-                x= parseInt(result[0].count)+1;
-            if(!result[0].count)
-                x=1;
-                console.log(x);
+            // const result = await pool.query('SELECT MAX(`diagram_id`) AS count FROM `diagram`');
+            // console.log(result);
+            // let x;
+            // if(result[0].count)
+            //     x= parseInt(result[0].count)+1;
+            // if(!result[0].count)
+            //     x=1;
+            //     console.log(x);
                     
             if(files.file.size)
             {    
                 var oldpath = files.file.path;
                 fileExt = files.file.name.split('.').pop();
-                var newpath='./public/diagram/'+ 'diagram_'+x+'.'+fileExt+'';
+                let fileName = 'diagram/'+ 'diagram_'+Date.now()+'.'+fileExt+'';
+                var newpath='./public/'+fileName;
                 fs.rename(oldpath, newpath, (err) => {
                     if (err){
                         res.send({code:33,msg:err});
                     }
                 });
-                name='./diagram/'+ 'diagram_'+x+'.'+fileExt+'';
+                const result3 = await pool.query('INSERT INTO `diagram`(`diagram_img`, `page_number`,`diagram_desc`,`catalogue_id`) VALUES (?,?,?,?)',
+                [fileName, fields.page_number, fields.description, fields.catalogue_id]);
             }
-            const result3 = await pool.query('INSERT INTO `diagram`(`diagram_img`, `page_number`,`diagram_desc`,`catalogue_id`) VALUES (?,?,?,?)',
-            [name, fields.page_number, fields.description, fields.catalogue_id]);
+            else{
+                const result3 = await pool.query('INSERT INTO `diagram`(`diagram_img`, `page_number`,`diagram_desc`,`catalogue_id`) VALUES (?,?,?,?)',
+                ['', fields.page_number, fields.description, fields.catalogue_id]);
+            }
+            
         });
+        res.send({code:1,msg:"success"})
     }
     catch(err){
         return res.send({code:0,msg:err})
     }
 });  
+
+router.post('/edit',function(req,res){
+    try
+    {
+            console.log("here")
+            let name;
+            let form = new formidable.IncomingForm();
+            form.keepExtensions= true ;
+            form.maxFieldsSize=10*1024*1024;
+            form.parse(req,async  (err, fields, files) => {
+            if (err)
+            {
+                console.error('Error', err)
+                return res.send({code:32,msg:err})
+            }
+                    
+            if(files.file.size)
+            {    
+                var oldpath = files.file.path;
+                fileExt = files.file.name.split('.').pop();
+                let fileName = 'diagram/'+ 'diagram_'+Date.now()+'.'+fileExt+'';
+                var newpath='./public/'+fileName;
+                fs.rename(oldpath, newpath, (err) => {
+                    if (err){
+                        res.send({code:33,msg:err});
+                    }
+                });
+                const result3 = await pool.query('UPDATE diagram SET diagram_img=?,page_number=?,diagram_desc=?,catalogue_id=? WHERE diagram_id= ?',
+                [fileName, fields.page_number, fields.description, fields.catalogue_id, fields.diagram_id]);
+            }
+            else{
+                const result3 = await pool.query('UPDATE diagram SET diagram_img=?,page_number=?,diagram_desc=?,catalogue_id=? WHERE diagram_id= ?',
+                ['', fields.page_number, fields.description, fields.catalogue_id, fields.diagram_id]);
+            }
+            res.send({code:1,msg:"success"})
+            
+        });
+    }
+    catch(err){
+        return res.send({code:0,msg:err})
+    }
+}); 
 
 
 router.get('/',  async (req,res)=>{
@@ -78,7 +126,7 @@ router.get('/',  async (req,res)=>{
 });
 
 
-router.delete('/',  async (req,res)=>{
+router.post('/delete',  async (req,res)=>{
     try{
         const {
             diagram_id
