@@ -15,7 +15,7 @@ const {
 router.post('/login',async (req,res)=>{
   try{
       const {email,password} = req.body;
-      const result = await pool.query("SELECT * FROM login WHERE email=?",[email]);
+      const result = await pool.query("SELECT * FROM login WHERE username=?",[email]);
       console.log(result[0].password)
         if (result.length) 
         {
@@ -26,7 +26,8 @@ router.post('/login',async (req,res)=>{
                     jwt.sign({id: result[0].u_id},keys.SECRET, (err,token)=>{
                         if(err) 
                         return res.send({code:4,msg:'Error'});
-                        
+                        delete result[0].password;
+                        delete result[0].id;
                         return res.send({
                             result,
                             token,
