@@ -125,7 +125,7 @@ router.post('/',function(req,res){
             var uploadDir = './public/product/product_'+pid+'/';
             const done = await save_directory(uploadDir)
 
-            // console.log(files.file.length);
+            console.log(files.file);
             if(files.file){
                 if(files.file.length){
                     for(let i=0; i< files.file.length; i++)
@@ -134,30 +134,31 @@ router.post('/',function(req,res){
                         {    
                             var oldpath = files.file[i].path;
                             fileExt = files.file[i].name.split('.').pop();
-                            var newpath='./public/product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                            fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                            var newpath='./public/'+fileName;
                             mv(oldpath, newpath, (err) => {
                                 if (err){
                                     res.send({code:33,msg:err});
                                 }
                             });
-                            name='product/product_'+pid+'/product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
                         }
-                        const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, name]);
+                        const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, fileName]);
                     }
                 }
                 else{
                     if(files.file.size)
                     {    
                         var oldpath = files.file.path;
-                        fileExt = files.file.name.split('.').pop();
-                        var newpath='./public/product/product_'+pid+'/'+ 'product_'+pid+'_'+0+Date.now()+'.'+fileExt+'';
+                        fileExt = files.file[i].name.split('.').pop();
+                        fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                        var newpath='./public/'+fileName;
                         mv(oldpath, newpath, (err) => {
                             if (err){
                                 res.send({code:33,msg:err});
                             }
                         });
-                        name='product/product_'+pid+'/product_'+pid+'_'+0+Date.now()+'.'+fileExt+'';
-                        const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, name]);
+                       
+                        const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, fileName]);
                     }
                 }
             }
@@ -257,30 +258,31 @@ router.post('/edit',function(req,res){
                     {    
                         var oldpath = files.file[i].path;
                         fileExt = files.file[i].name.split('.').pop();
-                        var newpath='./public/product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                        fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                        var newpath='./public/'+fileName;
                         mv(oldpath, newpath, (err) => {
                             if (err){
                                 res.send({code:33,msg:err});
                             }
                         });
-                        name='product/product_'+pid+'/product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
                     }
-                    const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, name]);
+                    const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, fileName]);
                 }
             }
             else{
                 if(files.file.size)
                 {    
                     var oldpath = files.file.path;
-                    fileExt = files.file.name.split('.').pop();
-                    var newpath='./public/product/product_'+pid+'/'+ 'product_'+pid+'_'+0+Date.now()+'.'+fileExt+'';
+                    fileExt = files.file[i].name.split('.').pop();
+                    fileName = 'product/product_'+pid+'/'+ 'product_'+pid+'_'+i+Date.now()+'.'+fileExt+'';
+                    var newpath='./public/'+fileName;
                     mv(oldpath, newpath, (err) => {
                         if (err){
                             res.send({code:33,msg:err});
                         }
                     });
-                    name='product/product_'+pid+'/product_'+pid+'_'+0+Date.now()+'.'+fileExt+'';
-                    const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, name]);
+                   
+                    const image = await pool.query("INSERT INTO product_image(`p_id`,`image`) VALUES(?,?)",[pid, filename]);
                 }
             }
             
