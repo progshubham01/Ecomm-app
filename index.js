@@ -16,6 +16,8 @@ const hsn = require('./routes/hsn');
 const product = require('./routes/products');
 const product_category = require('./routes/product_category');
 const group = require('./routes/group');
+const supplier = require('./routes/supplier');
+
 
 app.set('view engine', 'ejs');
 
@@ -45,6 +47,7 @@ app.use('/hsn', hsn);
 app.use('/products', product);
 app.use('/product_category', product_category);
 app.use('/group', group);
+app.use('/supplier', supplier);
 
 var server = app.listen(PORT,()=>{
   console.log(`Server started on port ${PORT}`);
